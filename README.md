@@ -5,7 +5,7 @@
 | Package | What |
 |---|---|
 | `packages/core` | Pure TypeScript clinical logic shared by API and clients: glucose classification, Rescue/DKA triggers, eA1c/GMI/time-in-range/velocity analytics and day-90 projection, program day/phase/week cycle, Friday glycemic-sequence locking, hydration deficit, rituals, missed medication detection. Unit-tested. |
-| `apps/api` | Express + Prisma/PostgreSQL REST API (email + password sign-in with scrypt hashes, JWT sessions, zod validation, helmet, rate limiting, per-user scoping, Expo push for recalibration and DKA alerts). |
+| `apps/api` | Express + Prisma/PostgreSQL REST API (email + password sign-in with scrypt hashes, JWT sessions, zod validation, helmet, rate limiting, per-user scoping, Expo push for DKA alerts and a Postgres-backed queue for recalibration reminders). |
 | `apps/web` | React/Vite web client implementing the three-zone UI. `core` has no DOM dependencies, so an Expo/React Native client can reuse it as-is. |
 
 ## Run locally
@@ -31,7 +31,7 @@ npm test                                          # core logic and API unit test
 - Ritual check-offs, meal times and rescue checkboxes are saved on the server (`RitualLog` per local calendar day, `RescueCheck` per spike reading), with a copy on the device so they still show offline. A change made offline is not retried.
 - Accounts use email + password (`POST /auth/register`, `POST /auth/login`). Passwords need at least 10 characters and are stored as scrypt hashes. Failed attempts are limited to 10 per IP per 15 minutes. There is no password reset or email verification yet.
 - `POST /auth/dev-login` (passwordless) exists only when `ENABLE_DEV_LOGIN=true` outside production. Accounts it creates have no password and cannot use `/auth/login`.
-- The recalibration push timer is in-process. Use a durable queue (pg-boss/BullMQ) for multi-instance deployments.
+- The 60-minute recalibration push is queued in Postgres (`ScheduledPush`), so it survives restarts and runs safely on several API instances (rows are claimed with `FOR UPDATE SKIP LOCKED`). Each instance polls every 15 s (`PUSH_POLL_MS`). Failed sends retry up to 5 times, and a reminder more than 30 minutes late is dropped.
 
 Not a medical device.
 

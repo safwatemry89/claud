@@ -44,6 +44,7 @@ model User {
   medicationLogs MedicationLog[]
   ritualLogs     RitualLog[]
   rescueChecks   RescueCheck[]
+  scheduledPush  ScheduledPush?
   programState   ProgramState?
 }
 
@@ -150,4 +151,20 @@ model RescueCheck {
   walking      Boolean    @default(false)
   posture      Boolean    @default(false)
   updatedAt    DateTime   @updatedAt
+}
+
+/// Durable queue for delayed pushes (the 60-minute recalibration reminder). One pending push per user:
+/// a newer spike replaces it. Polled by every API instance; rows are claimed with FOR UPDATE SKIP LOCKED.
+model ScheduledPush {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sendAt      DateTime
+  title       String
+  body        String
+  attempts    Int       @default(0)
+  lockedUntil DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([sendAt])
 }
