@@ -1,0 +1,12 @@
+{
+  "name": "metabolic-90",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "test": "npm run test -w @m90/core",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev:api": "npm run dev -w @m90/api",
+    "dev:web": "npm run dev -w @m90/web",
+    "build": "npm run build --workspaces --if-present"
+  }
+}

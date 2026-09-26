@@ -1,0 +1,120 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum GlucoseContext {
+  FASTING
+  BEFORE_MEAL
+  AFTER_MEAL
+  RANDOM
+}
+
+enum GlucoseStatus {
+  OPTIMAL
+  ELEVATED
+  HIGH
+}
+
+enum DayOfWeek {
+  SATURDAY
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  name           String?
+  pushToken      String? // Target signature for Expo/FCM push payloads
+  createdAt      DateTime        @default(now())
+  glucoseLogs    GlucoseLog[]
+  symptomLogs    SymptomLog[]
+  mealLogs       MealLog[]
+  hydrationLogs  HydrationLog[]
+  medicationLogs MedicationLog[]
+  programState   ProgramState?
+}
+
+model GlucoseLog {
+  id           String         @id @default(uuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  valueMgPerDl Int
+  measuredAt   DateTime
+  context      GlucoseContext
+  status       GlucoseStatus
+  notes        String?
+  symptomLogs  SymptomLog[]
+  createdAt    DateTime       @default(now())
+
+  @@index([userId, measuredAt])
+}
+
+model SymptomLog {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  glucoseLogId String?
+  glucoseLog   GlucoseLog? @relation(fields: [glucoseLogId], references: [id], onDelete: SetNull)
+  loggedAt     DateTime    @default(now())
+
+  continuousBurping Boolean @default(false)
+  bloating          Boolean @default(false)
+  nausea            Boolean @default(false)
+  abdominalPain     Boolean @default(false)
+  extremeLethargy   Boolean @default(false)
+  shortnessOfBreath Boolean @default(false)
+
+  severityScore Int @default(1)
+}
+
+model MealLog {
+  id                    String    @id @default(uuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loggedAt              DateTime  @default(now())
+  dayOfWeek             DayOfWeek
+  programDayNumber      Int
+  fiberConsumedFirst    Boolean   @default(false)
+  proteinConsumedSecond Boolean   @default(false)
+  carbsConsumedLast     Boolean   @default(false)
+  isCompliant           Boolean   @default(true)
+}
+
+model HydrationLog {
+  id       String   @id @default(uuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountMl Int      @default(250)
+  loggedAt DateTime @default(now())
+}
+
+model MedicationLog {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medName       String
+  doseTaken     String
+  scheduledTime DateTime
+  takenAt       DateTime @default(now())
+  isMissed      Boolean  @default(false)
+}
+
+model ProgramState {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startDate        DateTime @default(now())
+  currentDayNumber Int      @default(1) // Increments sequentially 1 -> 90
+  currentWeekCycle Int      @default(1) // Loops strictly 1 -> 4 for the 3-month rotation
+  isActive         Boolean  @default(true)
+}
