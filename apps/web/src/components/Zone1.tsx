@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { DKA_ALERT_TEXT, RECALIBRATION_PUSH_TEXT, RESCUE_STEPS, formatCountdown, secondsRemaining, type RescueStepKey } from '@m90/core';
 import { api, type Dashboard } from '../api';
-import { load, notify, save } from '../storage';
+import { load, notify, save, scheduleNotification, isNative } from '../storage';
 
 export function DkaOverlay({ onLogged }: { onLogged: () => void }) {
   const [value, setValue] = useState('');
@@ -45,13 +45,17 @@ function RescueBanner({ spikeId, recalibrateAt }: { spikeId: string; recalibrate
   const notified = useRef(load(`${key}.notified`, false));
 
   useEffect(() => {
+    scheduleNotification(key, deadline, 'Recalibration Window', RECALIBRATION_PUSH_TEXT);
+  }, [recalibrateAt]);
+
+  useEffect(() => {
     const id = setInterval(() => {
       const s = secondsRemaining(deadline);
       setSecs(s);
       if (s === 0 && !notified.current) {
         notified.current = true;
         save(`${key}.notified`, true);
-        notify('Recalibration Window', RECALIBRATION_PUSH_TEXT);
+        if (!isNative) notify('Recalibration Window', RECALIBRATION_PUSH_TEXT);
       }
     }, 1000);
     return () => clearInterval(id);

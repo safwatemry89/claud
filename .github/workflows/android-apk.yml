@@ -1,0 +1,45 @@
+name: Android APK
+
+on:
+  push:
+    branches: ['**']
+    paths: ['apps/web/**', 'packages/core/**', 'package-lock.json', '.github/workflows/android-apk.yml']
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'Default API server URL baked into the app (users can change it on the sign-in screen)'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+
+      - run: npm ci
+      - run: npm test
+      - name: Build web bundle and sync into Android project
+        working-directory: apps/web
+        env:
+          VITE_API_URL: ${{ github.event.inputs.api_url }}
+        run: |
+          npm run build
+          npx cap sync android
+      - name: Assemble debug APK
+        working-directory: apps/web/android
+        run: ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: metabolic-90-debug-apk
+          path: apps/web/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

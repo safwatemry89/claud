@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Metabolic-90</string>
+    <string name="title_activity_main">Metabolic-90</string>
+    <string name="package_name">com.metabolic90.app</string>
+    <string name="custom_url_scheme">com.metabolic90.app</string>
+</resources>

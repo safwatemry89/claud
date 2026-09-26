@@ -7,7 +7,8 @@ function required(name: string): string {
 export const config = {
   port: Number(process.env.PORT ?? 4000),
   jwtSecret: required('JWT_SECRET'),
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  // Comma-separated. The Android app's WebView origin is https://localhost.
+  corsOrigins: (process.env.CORS_ORIGIN ?? 'http://localhost:5173,https://localhost').split(',').map((s) => s.trim()),
   enableDevLogin: process.env.ENABLE_DEV_LOGIN === 'true' && process.env.NODE_ENV !== 'production',
 };
 

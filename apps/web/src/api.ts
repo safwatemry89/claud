@@ -1,6 +1,15 @@
 import type { AlertLevel, GlucoseContext, GlucoseStatus, GlycemicSummary, A1cProjection, HydrationStatus } from '@m90/core';
 
 const TOKEN_KEY = 'm90.token';
+const API_URL_KEY = 'm90.apiUrl';
+
+/** Server base URL. Empty means same origin (web dev via the Vite proxy); the Android app needs a full URL. */
+export function getApiUrl(): string {
+  try { return localStorage.getItem(API_URL_KEY) ?? import.meta.env.VITE_API_URL ?? ''; } catch { return import.meta.env.VITE_API_URL ?? ''; }
+}
+export function setApiUrl(url: string) {
+  try { localStorage.setItem(API_URL_KEY, url.trim().replace(/\/+$/, '')); } catch { /* ignore */ }
+}
 
 export function getToken(): string | null {
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
@@ -15,7 +24,7 @@ export class ApiError extends Error {
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const token = getToken();
-  const res = await fetch(path, {
+  const res = await fetch(getApiUrl() + path, {
     method,
     headers: { 'content-type': 'application/json', ...(token && { authorization: `Bearer ${token}` }) },
     body: body === undefined ? undefined : JSON.stringify(body),

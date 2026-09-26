@@ -33,3 +33,10 @@ npm test                                          # core logic tests
 - The recalibration push timer is in-process. Use a durable queue (pg-boss/BullMQ) for multi-instance deployments.
 
 Not a medical device.
+
+## Android APK
+The web client is wrapped with Capacitor (`apps/web/android`, app id `com.metabolic90.app`).
+- **CI:** the `Android APK` workflow builds a debug APK on every push that touches the client, and uploads it as the `metabolic-90-debug-apk` artifact. Run it manually with an `api_url` input to set a default server URL in the build.
+- **Locally** (requires the Android SDK): `npm run android:apk -w @m90/web`.
+- The phone must be able to reach the API over HTTPS. Enter the server URL on the sign-in screen, and include `https://localhost` in the API's `CORS_ORIGIN`.
+- The 60-minute recalibration reminder is scheduled as a native local notification, so it fires even when the app is in the background.

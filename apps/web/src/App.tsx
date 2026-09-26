@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, getToken, setToken, type Dashboard, type GlucoseLog } from './api';
+import { api, getApiUrl, getToken, setApiUrl, setToken, type Dashboard, type GlucoseLog } from './api';
 import { DkaOverlay, Zone1 } from './components/Zone1';
 import { GlucoseRing, QuickActions, StatsRow, TrendChart } from './components/Zone2';
 import { FoodLog, HydrationGrid, Medications, Rituals } from './components/Zone3';
-import { requestNotificationPermission } from './storage';
+import { isNative, requestNotificationPermission } from './storage';
 
 function Login({ onDone }: { onDone: () => void }) {
   const [email, setEmail] = useState('');
+  const [server, setServer] = useState(getApiUrl());
   const [error, setError] = useState<string | null>(null);
   return (
     <main className="login">
@@ -14,8 +15,13 @@ function Login({ onDone }: { onDone: () => void }) {
       <p className="muted">Absolute Glycemic Mastery & Digestive Recovery Engine</p>
       <form onSubmit={async (e) => {
         e.preventDefault();
+        if (isNative && !/^https?:\/\//.test(server)) return setError('Enter the server URL, e.g. https://api.example.com');
+        setApiUrl(server);
         try { setToken((await api.devLogin(email)).token); onDone(); } catch (x) { setError((x as Error).message); }
       }}>
+        {(isNative || server) && (
+          <input type="url" placeholder="Server URL (https://…)" value={server} onChange={(e) => setServer(e.target.value)} />
+        )}
         <input type="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         <button className="btn primary">Sign in</button>
         {error && <p className="error">{error}</p>}
