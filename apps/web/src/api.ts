@@ -59,7 +59,9 @@ export interface MealLog { fiberConsumedFirst: boolean; proteinConsumedSecond: b
 export interface MedicationDose { id: string; medName: string; doseTaken: string; scheduledTime: string; takenAt: string; isMissed: boolean }
 
 export const api = {
-  devLogin: (email: string, name?: string) => request<{ token: string }>('POST', '/auth/dev-login', { email, name }),
+  login: (email: string, password: string) => request<{ token: string }>('POST', '/auth/login', { email, password }),
+  register: (email: string, password: string, name?: string) =>
+    request<{ token: string }>('POST', '/auth/register', { email, password, name }),
   dashboard: () => request<Dashboard>('GET', '/api/dashboard'),
   glucose: (days = 14) => request<GlucoseLog[]>('GET', `/api/glucose?days=${days}`),
   logGlucose: (body: { valueMgPerDl: number; context: GlucoseContext; notes?: string; symptoms?: SymptomInput }) =>
