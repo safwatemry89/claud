@@ -42,6 +42,8 @@ model User {
   mealLogs       MealLog[]
   hydrationLogs  HydrationLog[]
   medicationLogs MedicationLog[]
+  ritualLogs     RitualLog[]
+  rescueChecks   RescueCheck[]
   programState   ProgramState?
 }
 
@@ -55,6 +57,7 @@ model GlucoseLog {
   status       GlucoseStatus
   notes        String?
   symptomLogs  SymptomLog[]
+  rescueCheck  RescueCheck?
   createdAt    DateTime       @default(now())
 
   @@index([userId, measuredAt])
@@ -118,4 +121,33 @@ model ProgramState {
   currentDayNumber Int      @default(1) // Increments sequentially 1 -> 90
   currentWeekCycle Int      @default(1) // Loops strictly 1 -> 4 for the 3-month rotation
   isActive         Boolean  @default(true)
+}
+
+/// One row per user per local calendar day (the client's date, so it follows the user's time zone).
+model RitualLog {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         String // YYYY-MM-DD
+  okraTakenAt  DateTime?
+  cinnamonDone Boolean   @default(false)
+  greenTeaDone Boolean   @default(false)
+  nextMealTime String? // HH:MM
+  lastMealTime String? // HH:MM
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, date])
+}
+
+/// 200+ Rescue Protocol checklist for one spike reading.
+model RescueCheck {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  glucoseLogId String     @unique
+  glucoseLog   GlucoseLog @relation(fields: [glucoseLogId], references: [id], onDelete: Cascade)
+  hydration    Boolean    @default(false)
+  walking      Boolean    @default(false)
+  posture      Boolean    @default(false)
+  updatedAt    DateTime   @updatedAt
 }

@@ -11,6 +11,8 @@ import { glucoseRouter } from './routes/glucose';
 import { hydrationRouter } from './routes/hydration';
 import { mealsRouter } from './routes/meals';
 import { medicationsRouter } from './routes/medications';
+import { rescueRouter } from './routes/rescue';
+import { ritualsRouter } from './routes/rituals';
 import { symptomsRouter } from './routes/symptoms';
 import { usersRouter } from './routes/users';
 
@@ -45,6 +47,8 @@ export function createApp() {
   api.use('/hydration', wrapAsync(hydrationRouter));
   api.use('/meals', wrapAsync(mealsRouter));
   api.use('/medications', wrapAsync(medicationsRouter));
+  api.use('/rituals', wrapAsync(ritualsRouter));
+  api.use('/rescue', wrapAsync(rescueRouter));
   api.use('/users', wrapAsync(usersRouter));
   app.use('/api', api);
 

@@ -136,28 +136,51 @@ const STATUS_LABEL: Record<RitualView['status'], string> = {
   CHECKED: 'Checked', MISSED: 'Missed', ACTIVE: 'Active', PENDING: 'Pending', UPCOMING: 'Upcoming',
 };
 
+type RitualDone = { okra: string | null; cinnamon: boolean; greenTea: boolean };
+type MealTimes = { next: string; last: string };
+
 export function Rituals() {
-  const key = `m90.rituals.${todayKey()}`;
-  const [done, setDone] = useState(() => load(key, { okra: null as string | null, cinnamon: false, greenTea: false }));
-  const [meals, setMeals] = useState(() => load(`${key}.meals`, { next: '13:00', last: '' }));
+  const date = todayKey();
+  const key = `m90.rituals.${date}`;
+  const [done, setDone] = useState(() => load<RitualDone>(key, { okra: null, cinnamon: false, greenTea: false }));
+  const [meals, setMeals] = useState(() => load<MealTimes>(`${key}.meals`, { next: '13:00', last: '' }));
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(id); }, []);
+
+  // The server copy wins, so check-offs follow the user across devices; the local copy covers offline use.
+  useEffect(() => {
+    api.rituals(date).then((r) => {
+      const d = { okra: r.okraTakenAt, cinnamon: r.cinnamonDone, greenTea: r.greenTeaDone };
+      setDone(d); save(key, d);
+      if (r.nextMealTime !== null || r.lastMealTime !== null) {
+        const m = { next: r.nextMealTime ?? '', last: r.lastMealTime ?? '' };
+        setMeals(m); save(`${key}.meals`, m);
+      }
+    }).catch(() => { /* offline: keep the cached copy */ });
+  }, [date]);
 
   const at = (hhmm: string) => { if (!hhmm) return null; const [h, m] = hhmm.split(':').map(Number); const d = new Date(now); d.setHours(h ?? 0, m ?? 0, 0, 0); return d; };
   const views = ritualStatuses({
     now, okraTakenAt: done.okra ? new Date(done.okra) : null, nextMealAt: at(meals.next), lastMealAt: at(meals.last),
     cinnamonDone: done.cinnamon, greenTeaDone: done.greenTea,
   });
-  const update = (n: typeof done) => { setDone(n); save(key, n); };
-  const toggle = (k: RitualView['key']) =>
-    update(k === 'okra' ? { ...done, okra: done.okra ? null : new Date().toISOString() } : { ...done, [k]: !done[k] });
+  const toggle = (k: RitualView['key']) => {
+    const n = k === 'okra' ? { ...done, okra: done.okra ? null : new Date().toISOString() } : { ...done, [k]: !done[k] };
+    setDone(n); save(key, n);
+    void api.updateRituals(date, k === 'okra' ? { okraTakenAt: n.okra } : k === 'cinnamon' ? { cinnamonDone: n.cinnamon } : { greenTeaDone: n.greenTea }).catch(() => {});
+  };
+  const setMeal = (field: keyof MealTimes, value: string) => {
+    const m = { ...meals, [field]: value };
+    setMeals(m); save(`${key}.meals`, m);
+    void api.updateRituals(date, { [field === 'next' ? 'nextMealTime' : 'lastMealTime']: value || null }).catch(() => {});
+  };
 
   return (
     <div className="card">
       <h3>Ritual Synchronization Log</h3>
       <div className="meal-times">
-        <label>Next meal <input type="time" value={meals.next} onChange={(e) => { const m = { ...meals, next: e.target.value }; setMeals(m); save(`${key}.meals`, m); }} /></label>
-        <label>Last meal <input type="time" value={meals.last} onChange={(e) => { const m = { ...meals, last: e.target.value }; setMeals(m); save(`${key}.meals`, m); }} /></label>
+        <label>Next meal <input type="time" value={meals.next} onChange={(e) => setMeal('next', e.target.value)} /></label>
+        <label>Last meal <input type="time" value={meals.last} onChange={(e) => setMeal('last', e.target.value)} /></label>
       </div>
       <ul className="rituals">
         {views.map((v) => (

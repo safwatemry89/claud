@@ -58,6 +58,11 @@ export interface Dashboard {
 export interface MealLog { fiberConsumedFirst: boolean; proteinConsumedSecond: boolean; carbsConsumedLast: boolean; isCompliant: boolean }
 export interface MedicationDose { id: string; medName: string; doseTaken: string; scheduledTime: string; takenAt: string; isMissed: boolean }
 
+export interface RitualDay {
+  date: string; okraTakenAt: string | null; cinnamonDone: boolean; greenTeaDone: boolean; nextMealTime: string | null; lastMealTime: string | null;
+}
+export interface RescueChecklist { hydration: boolean; walking: boolean; posture: boolean }
+
 export const api = {
   login: (email: string, password: string) => request<{ token: string }>('POST', '/auth/login', { email, password }),
   register: (email: string, password: string, name?: string) =>
@@ -76,4 +81,9 @@ export const api = {
   addMed: (body: { medName: string; doseTaken: string; scheduledTime: string; isMissed?: boolean }) =>
     request<MedicationDose>('POST', '/api/medications', body),
   markMed: (id: string, isMissed: boolean) => request<MedicationDose>('PATCH', `/api/medications/${id}`, { isMissed }),
+  rituals: (date: string) => request<RitualDay>('GET', `/api/rituals/${date}`),
+  updateRituals: (date: string, body: Partial<Omit<RitualDay, 'date'>>) => request<RitualDay>('PUT', `/api/rituals/${date}`, body),
+  rescue: (glucoseLogId: string) => request<RescueChecklist>('GET', `/api/rescue/${glucoseLogId}`),
+  updateRescue: (glucoseLogId: string, body: Partial<RescueChecklist>) =>
+    request<RescueChecklist>('PUT', `/api/rescue/${glucoseLogId}`, body),
 };
