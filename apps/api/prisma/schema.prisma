@@ -31,21 +31,24 @@ enum DayOfWeek {
 }
 
 model User {
-  id             String          @id @default(uuid())
-  email          String          @unique
-  name           String?
-  passwordHash   String? // scrypt, see src/passwords.ts. Null only for accounts made by dev-login.
-  pushToken      String? // Target signature for Expo/FCM push payloads
-  createdAt      DateTime        @default(now())
-  glucoseLogs    GlucoseLog[]
-  symptomLogs    SymptomLog[]
-  mealLogs       MealLog[]
-  hydrationLogs  HydrationLog[]
-  medicationLogs MedicationLog[]
-  ritualLogs     RitualLog[]
-  rescueChecks   RescueCheck[]
-  scheduledPush  ScheduledPush?
-  programState   ProgramState?
+  id              String          @id @default(uuid())
+  email           String          @unique
+  name            String?
+  passwordHash    String? // scrypt, see src/passwords.ts. Null only for accounts made by dev-login.
+  emailVerifiedAt DateTime?
+  tokenVersion    Int             @default(0) // Bumped on password reset to sign out every existing session
+  pushToken       String? // Target signature for Expo/FCM push payloads
+  createdAt       DateTime        @default(now())
+  glucoseLogs     GlucoseLog[]
+  symptomLogs     SymptomLog[]
+  mealLogs        MealLog[]
+  hydrationLogs   HydrationLog[]
+  medicationLogs  MedicationLog[]
+  ritualLogs      RitualLog[]
+  rescueChecks    RescueCheck[]
+  scheduledPush   ScheduledPush?
+  authTokens      AuthToken[]
+  programState    ProgramState?
 }
 
 model GlucoseLog {
@@ -167,4 +170,23 @@ model ScheduledPush {
   createdAt   DateTime  @default(now())
 
   @@index([sendAt])
+}
+
+enum AuthTokenPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+/// Single-use emailed link token. Only its SHA-256 is stored, so a database leak cannot be used to take over accounts.
+model AuthToken {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose   AuthTokenPurpose
+  tokenHash String           @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, purpose])
 }

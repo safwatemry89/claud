@@ -67,6 +67,11 @@ export const api = {
   login: (email: string, password: string) => request<{ token: string }>('POST', '/auth/login', { email, password }),
   register: (email: string, password: string, name?: string) =>
     request<{ token: string }>('POST', '/auth/register', { email, password, name }),
+  forgotPassword: (email: string) => request<{ message: string }>('POST', '/auth/forgot-password', { email }),
+  resetPassword: (token: string, password: string) => request<{ token: string }>('POST', '/auth/reset-password', { token, password }),
+  verifyEmail: (token: string) => request<{ verified: boolean }>('POST', '/auth/verify-email', { token }),
+  me: () => request<{ id: string; email: string; name: string | null; emailVerifiedAt: string | null }>('GET', '/api/users/me'),
+  resendVerification: () => request<{ message: string }>('POST', '/api/users/me/verify-email'),
   dashboard: () => request<Dashboard>('GET', '/api/dashboard'),
   glucose: (days = 14) => request<GlucoseLog[]>('GET', `/api/glucose?days=${days}`),
   logGlucose: (body: { valueMgPerDl: number; context: GlucoseContext; notes?: string; symptoms?: SymptomInput }) =>

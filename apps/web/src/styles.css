@@ -94,6 +94,8 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 sys
 .s-checked { color: var(--optimal); } .s-missed { color: var(--high); } .s-active { color: var(--accent); }
 .s-pending { color: var(--elevated); } .s-upcoming { color: var(--muted); }
 .login form { display: flex; flex-direction: column; gap: 10px; max-width: 360px; }
-.login > .link { margin-top: 14px; text-decoration: underline; }
+.login > .link { display: block; margin-top: 14px; text-decoration: underline; }
+.notice { background: color-mix(in srgb, var(--accent) 10%, var(--card)); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+.verify-banner .link { text-decoration: underline; }
 .disclaimer { font-size: 12px; text-align: center; padding: 12px 0 32px; }
 @media (max-width: 560px) { .med-form { grid-template-columns: 1fr 1fr; } }
