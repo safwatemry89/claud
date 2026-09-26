@@ -3,7 +3,7 @@
   "private": true,
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
-    "test": "npm run test -w @m90/core",
+    "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "dev:api": "npm run dev -w @m90/api",
     "dev:web": "npm run dev -w @m90/web",

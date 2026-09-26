@@ -3,14 +3,16 @@ import express, { type ErrorRequestHandler } from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { z } from 'zod';
-import { requireAuth, signToken } from './auth';
+import { requireAuth } from './auth';
 import { config } from './config';
-import { prisma } from './db';
+import { authRouter } from './routes/auth';
 import { dashboardRouter } from './routes/dashboard';
 import { glucoseRouter } from './routes/glucose';
 import { hydrationRouter } from './routes/hydration';
 import { mealsRouter } from './routes/meals';
 import { medicationsRouter } from './routes/medications';
+import { rescueRouter } from './routes/rescue';
+import { ritualsRouter } from './routes/rituals';
 import { symptomsRouter } from './routes/symptoms';
 import { usersRouter } from './routes/users';
 
@@ -35,18 +37,7 @@ export function createApp() {
 
   app.get('/health', (_req, res) => res.json({ ok: true }));
 
-  if (config.enableDevLogin) {
-    // Development-only passwordless login. Replace with a real identity provider in production.
-    app.post('/auth/dev-login', async (req, res, next) => {
-      try {
-        const { email, name } = z.object({ email: z.string().email(), name: z.string().max(100).optional() }).parse(req.body);
-        const user = await prisma.user.upsert({ where: { email }, update: {}, create: { email, name } });
-        res.json({ token: signToken(user.id), user });
-      } catch (e) {
-        next(e);
-      }
-    });
-  }
+  app.use('/auth', wrapAsync(authRouter));
 
   const api = express.Router();
   api.use(requireAuth);
@@ -56,6 +47,8 @@ export function createApp() {
   api.use('/hydration', wrapAsync(hydrationRouter));
   api.use('/meals', wrapAsync(mealsRouter));
   api.use('/medications', wrapAsync(medicationsRouter));
+  api.use('/rituals', wrapAsync(ritualsRouter));
+  api.use('/rescue', wrapAsync(rescueRouter));
   api.use('/users', wrapAsync(usersRouter));
   app.use('/api', api);
 

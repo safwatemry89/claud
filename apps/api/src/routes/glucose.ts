@@ -41,13 +41,13 @@ glucoseRouter.post('/', async (req, res) => {
   let missedDoses: { medName: string; scheduledTime: Date }[] = [];
 
   if (alert === 'DKA') {
-    cancelScheduledPush(userId);
+    await cancelScheduledPush(userId);
     void sendPush(userId, 'CRITICAL MEDICAL ALERT', DKA_ALERT_TEXT);
   } else if (alert === 'RESCUE') {
     recalibrateAt = recalibrationDeadline(measuredAt);
-    schedulePush(userId, recalibrateAt, 'Recalibration Window', RECALIBRATION_PUSH_TEXT);
+    await schedulePush(userId, recalibrateAt, 'Recalibration Window', RECALIBRATION_PUSH_TEXT);
   } else {
-    cancelScheduledPush(userId);
+    await cancelScheduledPush(userId);
   }
 
   if (input.valueMgPerDl >= RESCUE_THRESHOLD_MG_DL) {

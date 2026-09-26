@@ -5,10 +5,17 @@ import { GlucoseRing, QuickActions, StatsRow, TrendChart } from './components/Zo
 import { FoodLog, HydrationGrid, Medications, Rituals } from './components/Zone3';
 import { isNative, requestNotificationPermission } from './storage';
 
+const MIN_PASSWORD_LENGTH = 10;
+
 function Login({ onDone }: { onDone: () => void }) {
+  const [mode, setMode] = useState<'signin' | 'register'>('signin');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [server, setServer] = useState(getApiUrl());
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const registering = mode === 'register';
   return (
     <main className="login">
       <h1>Metabolic-90</h1>
@@ -17,15 +24,36 @@ function Login({ onDone }: { onDone: () => void }) {
         e.preventDefault();
         if (isNative && !/^https?:\/\//.test(server)) return setError('Enter the server URL, e.g. https://api.example.com');
         setApiUrl(server);
-        try { setToken((await api.devLogin(email)).token); onDone(); } catch (x) { setError((x as Error).message); }
+        setBusy(true);
+        try {
+          const { token } = registering ? await api.register(email, password, name || undefined) : await api.login(email, password);
+          setToken(token);
+          onDone();
+        } catch (x) {
+          setError((x as Error).message);
+        } finally {
+          setBusy(false);
+        }
       }}>
         {(isNative || server) && (
           <input type="url" placeholder="Server URL (https://…)" value={server} onChange={(e) => setServer(e.target.value)} />
         )}
-        <input type="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <button className="btn primary">Sign in</button>
+        {registering && (
+          <input type="text" autoComplete="name" placeholder="Name (optional)" maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
+        )}
+        <input type="email" required autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input
+          type="password" required placeholder={registering ? `Password (at least ${MIN_PASSWORD_LENGTH} characters)` : 'Password'}
+          autoComplete={registering ? 'new-password' : 'current-password'}
+          minLength={registering ? MIN_PASSWORD_LENGTH : undefined} maxLength={200}
+          value={password} onChange={(e) => setPassword(e.target.value)}
+        />
+        <button className="btn primary" disabled={busy}>{registering ? 'Create account' : 'Sign in'}</button>
         {error && <p className="error">{error}</p>}
       </form>
+      <button className="link" type="button" onClick={() => { setMode(registering ? 'signin' : 'register'); setError(null); }}>
+        {registering ? 'Already have an account? Sign in' : 'New here? Create an account'}
+      </button>
     </main>
   );
 }

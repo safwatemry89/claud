@@ -61,7 +61,18 @@ function RescueBanner({ spikeId, recalibrateAt }: { spikeId: string; recalibrate
     return () => clearInterval(id);
   }, [recalibrateAt]);
 
-  const toggle = (k: RescueStepKey) => setChecked((c) => { const n = { ...c, [k]: !c[k] }; save(key, n); return n; });
+  useEffect(() => {
+    api.rescue(spikeId).then(({ hydration, walking, posture }) => {
+      const n = { hydration, walking, posture };
+      setChecked(n); save(key, n);
+    }).catch(() => { /* offline: keep the cached copy */ });
+  }, [spikeId]);
+
+  const toggle = (k: RescueStepKey) => {
+    const n = { ...checked, [k]: !checked[k] };
+    setChecked(n); save(key, n);
+    void api.updateRescue(spikeId, { [k]: n[k] }).catch(() => {});
+  };
 
   return (
     <section className="rescue" aria-live="assertive">

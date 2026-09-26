@@ -1,4 +1,4 @@
-/** Per-device conveniences only (checkbox state for the current spike/day). Never clinical records. */
+/** Per-device cache and notification flags. Ritual and rescue check-offs are saved on the server; this copy shows them offline. */
 export function load<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -10,7 +10,9 @@ export function load<T>(key: string, fallback: T): T {
 export function save(key: string, value: unknown) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
 }
-export const todayKey = () => new Date().toISOString().slice(0, 10);
+/** Local calendar date as YYYY-MM-DD (not UTC, so the day turns over at the user's midnight). */
+export const todayKey = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
